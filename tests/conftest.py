@@ -1,0 +1,2 @@
+"""Fixtures compartilhadas pelos testes."""
+

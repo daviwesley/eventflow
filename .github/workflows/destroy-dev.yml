@@ -1,0 +1,49 @@
+name: Destroy Dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Digite DESTROY-DEV para confirmar a destruição"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'DESTROY-DEV'
+    runs-on: ubuntu-latest
+    environment: dev-destroy
+    defaults:
+      run:
+        working-directory: infra/environments/dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify persistent backend
+        run: |
+          if [ "${{ vars.TERRAFORM_REMOTE_STATE_READY }}" != "true" ]; then
+            echo "Remote Terraform state is not configured. Destroy is blocked for safety."
+            exit 1
+          fi
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Initialize
+        run: terraform init -input=false
+      - name: Validate
+        run: terraform validate
+      - name: Generate destroy plan
+        run: terraform plan -destroy -input=false -out=destroy.tfplan
+      - name: Destroy reviewed plan
+        run: terraform apply -input=false -auto-approve destroy.tfplan

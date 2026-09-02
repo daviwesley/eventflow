@@ -1,0 +1,31 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform-plan.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/environments/dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Format check
+        working-directory: infra
+        run: terraform fmt -check -recursive
+      - name: Initialize without backend
+        run: terraform init -backend=false
+      - name: Validate
+        run: terraform validate
+      - name: Plan
+        run: terraform plan -input=false -no-color

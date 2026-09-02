@@ -1,0 +1,2 @@
+"""Tipos e componentes compartilhados."""
+

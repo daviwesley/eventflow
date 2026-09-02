@@ -1,0 +1,2 @@
+"""Consumidores de eventos assíncronos."""
+

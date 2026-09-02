@@ -1,0 +1,2 @@
+"""Logs, métricas e tracing."""
+
