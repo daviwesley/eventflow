@@ -40,6 +40,8 @@ O state dos ambientes fica em um bucket S3 dedicado, com versionamento, bloqueio
 
 Antes do primeiro deploy, execute manualmente o workflow **Bootstrap Terraform State**. Ele cria e configura o bucket informado em `TERRAFORM_STATE_BUCKET`. A policy da role OIDC precisa conter as permissões de bootstrap presentes em `infra/bootstrap/github-actions-policy.json`.
 
+Para importar log groups criados por uma tentativa anterior, execute o workflow **Import Lambda Log Groups** com a confirmação `IMPORT-LOG-GROUPS`. Essa é uma operação única; depois da importação, o Terraform passa a gerenciar esses recursos pelo state.
+
 ```bash
 cd infra/bootstrap
 terraform init

@@ -1,0 +1,61 @@
+name: Import Lambda Log Groups
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Digite IMPORT-LOG-GROUPS para confirmar a importação"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: inputs.confirmation == 'IMPORT-LOG-GROUPS'
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: infra/environments/dev
+    steps:
+      - uses: actions/checkout@v5
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.16.1"
+      - name: Initialize remote state
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
+      - name: Import existing Lambda log groups
+        run: |
+          set -euo pipefail
+
+          for function_name in api payment expiration notification analytics; do
+            log_group_name="/aws/lambda/reservation-service-dev-$function_name"
+            resource_address="module.compute.aws_cloudwatch_log_group.lambda[\"$function_name\"]"
+
+            if terraform state show "$resource_address" >/dev/null 2>&1; then
+              echo "Already imported: $log_group_name"
+              continue
+            fi
+
+            if ! aws logs describe-log-groups \
+              --log-group-name-prefix "$log_group_name" \
+              --query "logGroups[?logGroupName=='$log_group_name'] | length(@)" \
+              --output text | grep -qx "1"; then
+              echo "Log group not found: $log_group_name"
+              exit 1
+            fi
+
+            terraform import -input=false "$resource_address" "$log_group_name"
+          done
