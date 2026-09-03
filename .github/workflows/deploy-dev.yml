@@ -53,6 +53,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: us-east-1
+          audience: sts.amazonaws.com
           role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
       - uses: hashicorp/setup-terraform@v4
         with:
