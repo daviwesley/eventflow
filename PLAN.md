@@ -215,7 +215,7 @@ O workflow destruirá somente os recursos registrados no Terraform state do ambi
 
 ### Requisito para deploy e destroy
 
-Os workflows de `apply` e `destroy` usam o mesmo state remoto no S3. O workflow destrói todos os recursos registrados no state da aplicação, executa uma verificação final com `terraform state list` e, somente depois dessa confirmação, remove todas as versões e delete markers das chaves de state e lock do ambiente `dev`. O bucket S3 pertence ao bootstrap da infraestrutura de gerenciamento e permanece preservado; um próximo deploy poderá criar o state novamente. O nome do bucket deve ser configurado na variável de ambiente do GitHub `TERRAFORM_STATE_BUCKET`, junto com `AWS_REGION` e `AWS_GITHUB_ACTIONS_ROLE_ARN`.
+Os workflows de `apply` e `destroy` usam o mesmo state remoto no S3 em `us-east-1`. O workflow destrói todos os recursos registrados no state da aplicação, executa uma verificação final com `terraform state list` e, somente depois dessa confirmação, remove todas as versões e delete markers das chaves de state e lock do ambiente `dev`. O bucket S3 pertence ao bootstrap da infraestrutura de gerenciamento e permanece preservado; um próximo deploy poderá criar o state novamente. O nome do bucket deve ser configurado na variável de ambiente do GitHub `TERRAFORM_STATE_BUCKET`; a role deve ser configurada em `AWS_GITHUB_ACTIONS_ROLE_ARN`.
 
 ### Uso do S3
 
