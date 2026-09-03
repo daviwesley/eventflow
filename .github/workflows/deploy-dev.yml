@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.actor == 'daviwesley'
     runs-on: ubuntu-latest
     environment: dev
     timeout-minutes: 20

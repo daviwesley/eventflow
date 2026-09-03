@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   destroy:
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'DESTROY-DEV'
+    if: github.actor == 'daviwesley' && github.ref == 'refs/heads/main' && inputs.confirmation == 'DESTROY-DEV'
     runs-on: ubuntu-latest
     environment: dev-destroy
     defaults:

@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   import:
-    if: inputs.confirmation == 'IMPORT-LOG-GROUPS'
+    if: github.actor == 'daviwesley' && inputs.confirmation == 'IMPORT-LOG-GROUPS'
     runs-on: ubuntu-latest
     environment: dev
     defaults:

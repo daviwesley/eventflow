@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   bootstrap:
+    if: github.actor == 'daviwesley'
     runs-on: ubuntu-latest
     environment: dev
     steps:

@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   unlock:
-    if: inputs.confirmation == 'UNLOCK-DEV'
+    if: github.actor == 'daviwesley' && inputs.confirmation == 'UNLOCK-DEV'
     runs-on: ubuntu-latest
     environment: dev
     defaults:
