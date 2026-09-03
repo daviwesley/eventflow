@@ -34,7 +34,7 @@ jobs:
         with:
           terraform_version: "1.16.1"
       - name: Initialize
-        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
       - name: Validate
         run: terraform validate
       - name: Generate destroy plan
@@ -51,7 +51,7 @@ jobs:
           fi
       - name: Remove dev state from S3
         env:
-          STATE_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET }}
+          STATE_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}
           STATE_KEY: reservation-service/dev/terraform.tfstate
           LOCK_KEY: reservation-service/dev/terraform.tfstate.tflock
         run: |

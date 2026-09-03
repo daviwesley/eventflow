@@ -30,7 +30,7 @@ jobs:
         working-directory: infra
         run: terraform fmt -check -recursive
       - name: Initialize with remote state
-        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
       - name: Validate
         run: terraform validate
       - name: Plan
