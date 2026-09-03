@@ -1,0 +1,56 @@
+name: Bootstrap Terraform State
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+      - name: Create and configure state bucket
+        env:
+          STATE_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "TERRAFORM_STATE_BUCKET is required in environment dev."
+            exit 1
+          fi
+
+          if aws s3api head-bucket --bucket "$STATE_BUCKET" 2>/dev/null; then
+            echo "State bucket already exists: $STATE_BUCKET"
+          else
+            echo "Creating state bucket: $STATE_BUCKET"
+            aws s3api create-bucket --bucket "$STATE_BUCKET" --region us-east-1
+          fi
+
+          aws s3api put-public-access-block \
+            --bucket "$STATE_BUCKET" \
+            --public-access-block-configuration \
+            BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+          aws s3api put-bucket-ownership-controls \
+            --bucket "$STATE_BUCKET" \
+            --ownership-controls 'Rules=[{ObjectOwnership=BucketOwnerEnforced}]'
+
+          aws s3api put-bucket-versioning \
+            --bucket "$STATE_BUCKET" \
+            --versioning-configuration Status=Enabled
+
+          aws s3api put-bucket-encryption \
+            --bucket "$STATE_BUCKET" \
+            --server-side-encryption-configuration \
+            '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+          echo "Terraform state bucket is ready: $STATE_BUCKET"

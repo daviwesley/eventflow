@@ -219,7 +219,7 @@ Os workflows de `apply` e `destroy` usam o mesmo state remoto no S3 em `us-east-
 
 ### Uso do S3
 
-O S3 é usado somente para o state do Terraform, não como armazenamento funcional da aplicação. O backend usa `use_lockfile = true`, criptografia SSE-S3 e versionamento. A criação inicial é feita assim:
+O S3 é usado somente para o state do Terraform, não como armazenamento funcional da aplicação. O backend usa `use_lockfile = true`, criptografia SSE-S3 e versionamento. A criação inicial pode ser feita pelo workflow manual **Bootstrap Terraform State**, que configura o bucket antes do primeiro `terraform init`.
 
 ```bash
 cd infra/bootstrap

@@ -38,6 +38,8 @@ O sistema controla reservas temporárias, processa pagamentos de forma assíncro
 
 O state dos ambientes fica em um bucket S3 dedicado, com versionamento, bloqueio nativo por `.tflock`, bloqueio de acesso público e criptografia SSE-S3. O workflow de destruição remove todos os recursos registrados no state da aplicação, valida que o state ficou vazio e então remove todas as versões do state e do lock do ambiente `dev`. O bucket de state pertence ao bootstrap da infraestrutura de gerenciamento e permanece preservado; um próximo deploy poderá criar o state novamente.
 
+Antes do primeiro deploy, execute manualmente o workflow **Bootstrap Terraform State**. Ele cria e configura o bucket informado em `TERRAFORM_STATE_BUCKET`. A policy da role OIDC precisa conter as permissões de bootstrap presentes em `infra/bootstrap/github-actions-policy.json`.
+
 ```bash
 cd infra/bootstrap
 terraform init
