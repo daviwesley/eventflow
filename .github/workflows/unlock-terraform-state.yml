@@ -1,0 +1,46 @@
+name: Unlock Terraform State
+
+on:
+  workflow_dispatch:
+    inputs:
+      lock_id:
+        description: "ID exibido na mensagem Error acquiring the state lock"
+        required: true
+        type: string
+      confirmation:
+        description: "Digite UNLOCK-DEV para confirmar"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+jobs:
+  unlock:
+    if: inputs.confirmation == 'UNLOCK-DEV'
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: infra/environments/dev
+    steps:
+      - uses: actions/checkout@v5
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.16.1"
+      - name: Initialize remote state
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
+      - name: Force unlock state
+        env:
+          LOCK_ID: ${{ inputs.lock_id }}
+        run: terraform force-unlock -force "$LOCK_ID"

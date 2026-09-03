@@ -42,6 +42,8 @@ Antes do primeiro deploy, execute manualmente o workflow **Bootstrap Terraform S
 
 Para importar log groups criados por uma tentativa anterior, execute o workflow **Import Lambda Log Groups** com a confirmação `IMPORT-LOG-GROUPS`. Essa é uma operação única; depois da importação, o Terraform passa a gerenciar esses recursos pelo state.
 
+Se uma execução for cancelada durante um `apply`, pode ficar um lock órfão no state. Nesse caso, execute **Unlock Terraform State**, informe o ID do lock exibido no erro e use a confirmação `UNLOCK-DEV`. Nunca use `-lock=false` no deploy.
+
 ```bash
 cd infra/bootstrap
 terraform init
