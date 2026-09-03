@@ -50,16 +50,6 @@ jobs:
               exit 1
               ;;
           esac
-      - name: Debug GitHub OIDC claims
-        run: |
-          set -euo pipefail
-
-          token_response="$(curl --fail-with-body --silent --show-error \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com")"
-          oidc_token="$(jq -r '.value' <<< "$token_response")"
-          payload="$(cut -d '.' -f2 <<< "$oidc_token" | tr '_-' '/+' | base64 --decode 2>/dev/null)"
-          jq '{sub, aud, repository, environment, ref, job_workflow_ref}' <<< "$payload"
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: us-east-1
