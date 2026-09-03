@@ -133,9 +133,7 @@
         "apigateway:POST",
         "apigateway:PUT",
         "apigateway:PATCH",
-        "apigateway:DELETE",
-        "apigateway:TagResource",
-        "apigateway:UntagResource"
+        "apigateway:DELETE"
       ],
       "Resource": "*"
     },
