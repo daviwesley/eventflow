@@ -8,9 +8,6 @@ resource "aws_apigatewayv2_api" "this" {
     allow_origins = var.allow_origins
   }
 
-  tags = {
-    Component = "api"
-  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {

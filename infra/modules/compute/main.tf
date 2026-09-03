@@ -51,7 +51,7 @@ module "package" {
     ]
   }]
   build_in_docker = var.build_in_docker
-  docker_image    = "public.ecr.aws/sam/build-python3.12:latest"
+  docker_image    = "eventflow-lambda-build:latest"
   docker_file     = var.docker_file
   artifacts_dir   = var.artifacts_dir
   hash_extra      = "reservation-service-shared-package"

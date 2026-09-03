@@ -88,6 +88,7 @@
         "sns:Subscribe",
         "sns:Unsubscribe",
         "sns:ListSubscriptionsByTopic",
+        "sns:GetSubscriptionAttributes",
         "sns:ListTagsForResource",
         "sns:TagResource",
         "sns:UntagResource",
