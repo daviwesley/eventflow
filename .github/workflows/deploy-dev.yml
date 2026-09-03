@@ -28,6 +28,28 @@ jobs:
         working-directory: infra/environments/dev
     steps:
       - uses: actions/checkout@v5
+      - name: Validate OIDC role configuration
+        env:
+          ROLE_ARN: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$ROLE_ARN" ]; then
+            echo "AWS_GITHUB_ACTIONS_ROLE_ARN is empty in environment dev."
+            exit 1
+          fi
+
+          case "$ROLE_ARN" in
+            arn:aws:iam::596929569173:role/*)
+              echo "OIDC role account: 596929569173"
+              echo "OIDC role name: ${ROLE_ARN##*/}"
+              ;;
+            *)
+              echo "AWS_GITHUB_ACTIONS_ROLE_ARN does not contain the expected role ARN format."
+              echo "Expected: arn:aws:iam::596929569173:role/<role-name>"
+              exit 1
+              ;;
+          esac
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: us-east-1
