@@ -23,6 +23,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: dev
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: infra/environments/dev
