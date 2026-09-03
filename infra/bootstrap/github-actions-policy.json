@@ -88,6 +88,7 @@
         "sns:Subscribe",
         "sns:Unsubscribe",
         "sns:ListSubscriptionsByTopic",
+        "sns:ListTagsForResource",
         "sns:TagResource",
         "sns:UntagResource",
         "sqs:CreateQueue",
@@ -144,6 +145,7 @@
         "logs:CreateLogGroup",
         "logs:DeleteLogGroup",
         "logs:DescribeLogGroups",
+        "logs:ListTagsForResource",
         "logs:PutRetentionPolicy",
         "logs:DeleteRetentionPolicy",
         "logs:TagResource",
@@ -151,6 +153,7 @@
         "cloudwatch:PutMetricAlarm",
         "cloudwatch:DeleteAlarms",
         "cloudwatch:DescribeAlarms",
+        "cloudwatch:ListTagsForResource",
         "cloudwatch:TagResource",
         "cloudwatch:UntagResource"
       ],
