@@ -44,7 +44,7 @@ jobs:
             fi
 
             if aws logs describe-log-groups \
-              --log-group-name "$log_group_name" \
+              --log-group-name-prefix "$log_group_name" \
               --query 'logGroups[0].logGroupName' \
               --output text 2>/dev/null | grep -qx "$log_group_name"; then
               terraform import -input=false "$resource_address" "$log_group_name"
