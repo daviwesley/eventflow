@@ -111,6 +111,7 @@
         "lambda:DeleteFunction",
         "lambda:GetFunction",
         "lambda:GetFunctionConfiguration",
+        "lambda:ListVersionsByFunction",
         "lambda:UpdateFunctionCode",
         "lambda:UpdateFunctionConfiguration",
         "lambda:PublishVersion",
