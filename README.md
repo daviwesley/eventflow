@@ -34,6 +34,23 @@ O sistema controla reservas temporárias, processa pagamentos de forma assíncro
 - Terraform.
 - GitHub Actions com Gitflow.
 
+## State do Terraform
+
+O state dos ambientes fica em um bucket S3 dedicado, com versionamento, bloqueio nativo por `.tflock`, bloqueio de acesso público e criptografia SSE-S3. O workflow de destruição remove todos os recursos registrados no state da aplicação, valida que o state ficou vazio e então remove todas as versões do state e do lock do ambiente `dev`. O bucket de state pertence ao bootstrap da infraestrutura de gerenciamento e permanece preservado; um próximo deploy poderá criar o state novamente.
+
+```bash
+cd infra/bootstrap
+terraform init
+terraform apply
+
+cd ../environments/dev
+cp backend.hcl.example backend.hcl
+# Edite backend.hcl com o bucket exibido pelo bootstrap.
+terraform init -backend-config=backend.hcl
+```
+
+Como a conta AWS não é nova, a estimativa não considera Free Tier promocional. Para o state deste projeto, o custo esperado do S3 é de aproximadamente US$ 0,01–0,05 por mês, considerando armazenamento pequeno, versionamento e uso normal do Terraform. O custo pode aumentar com muitas versões, transferências ou funcionalidades opcionais.
+
 ## Arquitetura resumida
 
 ```text

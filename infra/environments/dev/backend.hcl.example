@@ -1,0 +1,4 @@
+# Copie para backend.hcl e informe o bucket criado por infra/bootstrap.
+# O arquivo backend.hcl local não deve ser versionado.
+bucket = "reservation-service-terraform-state-ACCOUNT_ID"
+region = "us-east-1"

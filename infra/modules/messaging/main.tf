@@ -29,7 +29,7 @@ resource "aws_sqs_queue" "dlq" {
   redrive_allow_policy = jsonencode({
     redrivePermission = "byQueue"
     sourceQueueArns = [
-      "arn:${data.aws_partition.current.partition}:sqs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${var.project_name}-${var.environment}-${each.key}"
+      "arn:${data.aws_partition.current.partition}:sqs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:${var.project_name}-${var.environment}-${each.key}"
     ]
   })
 

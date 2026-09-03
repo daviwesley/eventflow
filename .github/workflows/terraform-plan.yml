@@ -7,6 +7,7 @@ on:
       - ".github/workflows/terraform-plan.yml"
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -17,14 +18,18 @@ jobs:
         working-directory: infra/environments/dev
     steps:
       - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.16.1"
       - name: Format check
         working-directory: infra
         run: terraform fmt -check -recursive
-      - name: Initialize without backend
-        run: terraform init -backend=false
+      - name: Initialize with remote state
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET }}" -backend-config="region=${{ vars.AWS_REGION }}"
       - name: Validate
         run: terraform validate
       - name: Plan

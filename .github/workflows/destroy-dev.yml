@@ -26,24 +26,72 @@ jobs:
         working-directory: infra/environments/dev
     steps:
       - uses: actions/checkout@v4
-      - name: Verify persistent backend
-        run: |
-          if [ "${{ vars.TERRAFORM_REMOTE_STATE_READY }}" != "true" ]; then
-            echo "Remote Terraform state is not configured. Destroy is blocked for safety."
-            exit 1
-          fi
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.16.1"
       - name: Initialize
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET }}" -backend-config="region=${{ vars.AWS_REGION }}"
       - name: Validate
         run: terraform validate
       - name: Generate destroy plan
         run: terraform plan -destroy -input=false -out=destroy.tfplan
       - name: Destroy reviewed plan
         run: terraform apply -input=false -auto-approve destroy.tfplan
+      - name: Verify application state is empty
+        run: |
+          remaining_resources="$(terraform state list)"
+          if [ -n "$remaining_resources" ]; then
+            echo "Resources remain in the application Terraform state:"
+            echo "$remaining_resources"
+            exit 1
+          fi
+      - name: Remove dev state from S3
+        env:
+          STATE_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET }}
+          STATE_KEY: reservation-service/dev/terraform.tfstate
+          LOCK_KEY: reservation-service/dev/terraform.tfstate.tflock
+        run: |
+          set -euo pipefail
+
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "TERRAFORM_STATE_BUCKET is required. State cleanup was not executed."
+            exit 1
+          fi
+
+          for object_key in "$STATE_KEY" "$LOCK_KEY"; do
+            versions="$(aws s3api list-object-versions \
+              --bucket "$STATE_BUCKET" \
+              --prefix "$object_key" \
+              --query "Versions[?Key=='$object_key'].[Key,VersionId]" \
+              --output text)"
+
+            if [ -n "$versions" ]; then
+              while IFS=$'\t' read -r key version_id; do
+                [ -z "${key:-}" ] && continue
+                aws s3api delete-object \
+                  --bucket "$STATE_BUCKET" \
+                  --key "$key" \
+                  --version-id "$version_id"
+              done <<< "$versions"
+            fi
+
+            delete_markers="$(aws s3api list-object-versions \
+              --bucket "$STATE_BUCKET" \
+              --prefix "$object_key" \
+              --query "DeleteMarkers[?Key=='$object_key'].[Key,VersionId]" \
+              --output text)"
+
+            if [ -n "$delete_markers" ]; then
+              while IFS=$'\t' read -r key version_id; do
+                [ -z "${key:-}" ] && continue
+                aws s3api delete-object \
+                  --bucket "$STATE_BUCKET" \
+                  --key "$key" \
+                  --version-id "$version_id"
+              done <<< "$delete_markers"
+            fi
+          done

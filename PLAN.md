@@ -116,11 +116,12 @@ O monólito terá módulos internos bem definidos, mas será implantado e versio
 ### State e ambientes
 
 - Não versionar `terraform.tfstate`, `.terraform/`, planos binários ou credenciais.
-- Para colaboração, usar backend remoto S3 com criptografia SSE-S3, versionamento e locking habilitado.
-- O bucket de state usará a classe S3 Standard e terá lifecycle para limitar versões não correntes antigas.
+- Usar backend S3 no ambiente `dev`, com state versionado e locking nativo do Terraform via objeto `.tflock`.
+- Não versionar o arquivo `terraform.tfstate`; o bucket deve ter bloqueio de acesso público, SSE-S3 e lifecycle para expirar versões antigas.
+- Criar o bucket por `infra/bootstrap`, separado do root module da aplicação, pois o backend precisa existir antes do `terraform init`.
+- O CI usa o mesmo state remoto, com OIDC e uma role IAM dedicada; deploy e destroy permanecem protegidos por environments e concorrência.
 - Manter um state separado para cada ambiente (`dev`, `staging`, `prod`).
 - O primeiro ambiente será `dev`, com configurações de baixo custo e sem recursos não essenciais.
-- O bucket de state deve ser criado por um bootstrap separado, pois o backend precisa existir antes do `terraform init`.
 - Nunca colocar credenciais AWS diretamente no backend ou nos arquivos `.tf`; usar perfil AWS, variáveis de ambiente ou identidade da CI.
 - Não armazenar segredos em outputs. Quando inevitável, marcar outputs como `sensitive` e lembrar que valores sensíveis ainda podem existir no state.
 
@@ -214,17 +215,23 @@ O workflow destruirá somente os recursos registrados no Terraform state do ambi
 
 ### Requisito para deploy e destroy
 
-Os workflows de `apply` e `destroy` precisam usar o mesmo state persistente. O backend local é aceitável para execução manual no ambiente de desenvolvimento, mas não é adequado para GitHub Actions, pois cada runner é efêmero. Para habilitar esses workflows com segurança, será necessário escolher um backend remoto, como S3 ou HCP Terraform. Enquanto isso, os workflows devem permanecer limitados a validação e plan sem alteração de recursos.
+Os workflows de `apply` e `destroy` usam o mesmo state remoto no S3. O workflow destrói todos os recursos registrados no state da aplicação, executa uma verificação final com `terraform state list` e, somente depois dessa confirmação, remove todas as versões e delete markers das chaves de state e lock do ambiente `dev`. O bucket S3 pertence ao bootstrap da infraestrutura de gerenciamento e permanece preservado; um próximo deploy poderá criar o state novamente. O nome do bucket deve ser configurado na variável de ambiente do GitHub `TERRAFORM_STATE_BUCKET`, junto com `AWS_REGION` e `AWS_GITHUB_ACTIONS_ROLE_ARN`.
 
-### Uso do S3 e Free Tier
+### Uso do S3
 
-- Usar S3 somente para o Terraform state e artefatos pequenos de deploy.
-- Para novos clientes, o Free Tier do S3 inclui até 5 GB de armazenamento S3 Standard, 20.000 requisições GET, 2.000 requisições PUT e 100 GB de transferência de saída por mês durante o período elegível.
-- O bucket de state deste projeto deverá permanecer muito abaixo desses limites.
-- Usar SSE-S3 (`AES256`) em vez de SSE-KMS na primeira versão, evitando dependência de uma chave KMS e possíveis custos adicionais.
-- Habilitar versionamento, mas expirar versões não correntes antigas por lifecycle para evitar crescimento indefinido.
-- Não habilitar replicação entre regiões, S3 Access Logs, Intelligent-Tiering ou Glacier para este projeto.
-- Criar alertas de billing e revisar o uso do Free Tier antes de qualquer ambiente adicional.
+O S3 é usado somente para o state do Terraform, não como armazenamento funcional da aplicação. O backend usa `use_lockfile = true`, criptografia SSE-S3 e versionamento. A criação inicial é feita assim:
+
+```bash
+cd infra/bootstrap
+terraform init
+terraform apply
+terraform output -raw terraform_state_bucket_name
+
+cd ../environments/dev
+terraform init -backend-config=backend.hcl
+```
+
+Para a conta atual, que não é nova, não se deve assumir o benefício promocional do Free Tier. Em `us-east-1`, um state pequeno (até 1 MB), mesmo com dezenas de versões, tende a custar menos de US$ 0,01/mês em armazenamento. As requisições de planos/applies normalmente ficam abaixo de US$ 0,01/mês; o custo total esperado para este projeto é aproximadamente US$ 0,01–0,05/mês, sem recursos adicionais como replicação, logs de acesso ou SSE-KMS. O valor real depende da região, quantidade de execuções, versões retidas e transferência.
 
 ### Entrypoints das Lambdas
 
