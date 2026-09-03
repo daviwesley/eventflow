@@ -23,6 +23,25 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+      - name: Import existing Lambda log groups
+        run: |
+          set -euo pipefail
+
+          for function_name in api payment expiration notification analytics; do
+            log_group_name="/aws/lambda/reservation-service-dev-$function_name"
+            resource_address="module.compute.aws_cloudwatch_log_group.lambda[\"$function_name\"]"
+
+            if terraform state show "$resource_address" >/dev/null 2>&1; then
+              continue
+            fi
+
+            if aws logs describe-log-groups \
+              --log-group-name-prefix "$log_group_name" \
+              --query "logGroups[?logGroupName=='$log_group_name'] | length(@)" \
+              --output text | grep -qx "1"; then
+              terraform import -input=false "$resource_address" "$log_group_name"
+            fi
+          done
       - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "1.16.1"
@@ -31,25 +50,6 @@ jobs:
         run: terraform fmt -check -recursive
       - name: Initialize with remote state
         run: terraform init -input=false -backend-config="bucket=${{ vars.TERRAFORM_STATE_BUCKET || secrets.TERRAFORM_STATE_BUCKET }}" -backend-config="region=us-east-1"
-      - name: Import existing Lambda log groups
-        run: |
-          set -euo pipefail
-
-          for function_name in api payment expiration notification analytics; do
-            log_group_name="/aws/lambda/reservation-service-dev-$function_name"
-            resource_address="module.compute.module.lambda[\"$function_name\"].aws_cloudwatch_log_group.lambda[0]"
-
-            if terraform state show "$resource_address" >/dev/null 2>&1; then
-              continue
-            fi
-
-            if aws logs describe-log-groups \
-              --log-group-name-prefix "$log_group_name" \
-              --query 'logGroups[0].logGroupName' \
-              --output text 2>/dev/null | grep -qx "$log_group_name"; then
-              terraform import -input=false "$resource_address" "$log_group_name"
-            fi
-          done
       - name: Validate
         run: terraform validate
       - name: Plan

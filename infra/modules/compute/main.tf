@@ -57,6 +57,17 @@ module "package" {
   hash_extra      = "reservation-service-shared-package"
 }
 
+resource "aws_cloudwatch_log_group" "lambda" {
+  for_each = local.functions
+
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-${each.key}"
+  retention_in_days = var.log_retention_days
+
+  tags = {
+    Component = "observability"
+  }
+}
+
 module "lambda" {
   for_each = local.functions
 
@@ -76,9 +87,12 @@ module "lambda" {
   lambda_role            = var.lambda_roles[each.key]
 
   cloudwatch_logs_retention_in_days = var.log_retention_days
+  use_existing_cloudwatch_log_group = true
   attach_cloudwatch_logs_policy     = false
   attach_tracing_policy             = false
   allowed_triggers                  = {}
+
+  depends_on = [aws_cloudwatch_log_group.lambda]
 
   environment_variables = {
     ENVIRONMENT = var.environment
