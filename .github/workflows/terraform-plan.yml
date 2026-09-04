@@ -35,4 +35,4 @@ jobs:
       - name: Validate
         run: terraform validate
       - name: Plan
-        run: terraform plan -input=false -no-color
+        run: terraform plan -input=false -parallelism=1 -no-color

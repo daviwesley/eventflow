@@ -36,6 +36,8 @@ module "iam" {
 module "compute" {
   source = "../../modules/compute"
 
+  depends_on = [module.iam]
+
   project_name     = var.project_name
   environment      = var.environment
   application_path = local.application_path

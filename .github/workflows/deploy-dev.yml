@@ -65,6 +65,6 @@ jobs:
       - name: Validate
         run: terraform validate
       - name: Plan
-        run: terraform plan -input=false -out=tfplan
+        run: terraform plan -input=false -parallelism=1 -out=tfplan
       - name: Apply reviewed plan
-        run: terraform apply -input=false -auto-approve tfplan
+        run: terraform apply -input=false -parallelism=1 -lock-timeout=5m -auto-approve tfplan
